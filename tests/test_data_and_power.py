@@ -1,5 +1,5 @@
 """Checks on the YAML data files and the POWER parser (no network)."""
-from engine import calendars, config, power
+from engine import config, power
 
 
 def test_crops_have_12_month_kc():
@@ -26,10 +26,3 @@ def test_power_parse_replaces_fill_values():
     df = power.parse(raw)
     assert list(df.columns) == ["tmean_c", "rain_mm"]
     assert df["tmean_c"].isna().sum() == 1
-
-
-def test_bare_months_cover_crop_reduces_bare_soil():
-    plain = [{"year": i, "crop": "maize", "cover": False} for i in range(1, 5)]
-    covered = [{"year": i, "crop": "maize", "cover": True} for i in range(1, 5)]
-    assert sum(calendars.bare_months(covered)) < sum(calendars.bare_months(plain))
-    assert calendars.bare_months(plain)[0] == 1.0  # maize field is bare in January

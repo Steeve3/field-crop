@@ -4,7 +4,14 @@ P0 = demo needs it · P1 = nice · P2 = only if ahead.
 If behind, cut in this order: P2 → P1 → map click (keep presets only).
 Never cut: S0 + alternatives, Evidence Cards, calendars, sliders, disclaimer.
 
-## Together, first 45 min
+## Now (after the layout rebuild)
+- [x] App follows the Orbit Almanac layout, runs on SAMPLE data, model in `engine/model.py`
+- [x] Map: draw 4 corners -> `st.session_state["bbox"]` (lon_min, lat_min, lon_max, lat_max)
+- [ ] Feed the bbox to the terrain notebook (terrain description + crop ranking) and decide where it shows
+- [ ] Replace SAMPLE climate with NASA POWER (`engine/power.py` already fetches and caches)
+- [ ] Decide the structure of the remaining sections, then drop the old list below
+
+## Together, first 45 min (old list)
 - [x] P0 Repo, folders, AGENTS.md, requirements.txt
 - [x] P0 3 Italian demo fields (see `data/fields.yaml`) — check the points and rotations
 - [x] P0 Data shape the engine returns (see `engine/schema.py`) — read it together, change now if needed

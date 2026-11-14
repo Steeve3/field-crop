@@ -1,25 +1,25 @@
-"""The one function the app calls."""
+"""The one function the app calls. Runs on SAMPLE data for now (engine/sample.py); no dataset is read."""
 from __future__ import annotations
 
-from . import power, sample
-from .schema import AnalysisResult, CropYear, Field, Irrigation, Priorities, WhatIf
+from . import model, sample
+from .schema import AnalysisResult
 
 
-def analyze(
-    field: Field,
-    current_rotation: list[CropYear],
-    current_irrigation: Irrigation,
-    priorities: Priorities,
-    whatif: WhatIf | None = None,
-) -> AnalysisResult:
-    """Field + current rotation + priorities (+ what-if) -> S0 and 3 alternatives.
-
-    Until the engine is finished this returns real NASA POWER climate facts plus
-    SAMPLE strategies (clearly labelled). Dev A: replace the sample call with:
-        daily -> model.simulate_rotation for S0 and every template -> strategies.pick_strategies
-        -> calendars + explain.evidence_card for each pick.
-    """
-    whatif = whatif or {}
-    daily, status = power.get_daily(field["lat"], field["lon"])
-    climate = power.climate_summary(daily)
-    return sample.sample_result(field, climate, current_rotation, current_irrigation, whatif, status)
+def analyze(soil: str = "loam", slope: str = "flat", access: str = "limited", weights: dict | None = None,
+            rain_pct: float = 0.0, temp_delta_c: float = 0.0) -> AnalysisResult:
+    """Field settings + priorities + what-if -> climate read and ranked rotations (current one included)."""
+    weights = weights or sample.PRESETS["balanced"]["w"]
+    options = model.rank(sample.CLIMATE, sample.ROTATIONS, sample.CROPS, sample.SOILS[soil], sample.SLOPES[slope],
+                         sample.ACCESS[access], weights, rain_pct, temp_delta_c)
+    c = model.climate_for(sample.CLIMATE, rain_pct, temp_delta_c)
+    short = [e > p for e, p in zip(c["ET0"], c["P"])]
+    climate = {
+        **c,
+        "rain_mm": sum(c["P"]),
+        "et0_mm": sum(c["ET0"]),
+        "short": short,                                    # months when demand exceeds rain
+        "deficit_mm": sum(e - p for e, p, s in zip(c["ET0"], c["P"], short) if s),
+        "frost": [t < 1 for t in c["Tn"]],                 # ASSUMPTION: night low below 1 °C = frost-prone
+        "heat": [t > 32 for t in c["Tx"]],                 # ASSUMPTION: daily high above 32 °C = heat
+    }
+    return {"data_status": "sample", "source": sample.SOURCE, "climate": climate, "options": options}

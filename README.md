@@ -25,12 +25,10 @@ pytest -q
 app.py              Streamlit UI (Dev B)
 engine/             all logic (Dev A); the app only calls engine.analyze()
   schema.py         the shared data shape (agree before changing)
-  power.py          NASA POWER fetch + disk cache
-  model.py          water, yield, soil, profit, resilience       (TODO)
-  strategies.py     S0 + alternatives                            (TODO)
-  calendars.py      bare months + vulnerability                  (TODO)
-  explain.py        Evidence Cards                               (TODO)
-  sample.py         SAMPLE result so the UI works today — delete when the engine works
+  sample.py         SAMPLE climate, crops, rotations — the only data used for now
+  model.py          monthly water balance, soil cover, nitrogen, pest break, weather fit, scores
+  api.py            analyze(): the one function the app calls
+  power.py          NASA POWER fetch + disk cache (not used yet)
 data/               crops.yaml, rotations.yaml, fields.yaml, cache/
 scripts/            prefetch_demo.py
 tests/

@@ -1,173 +1,266 @@
-"""FieldShift Advisor — Streamlit UI (Dev B). Only calls engine.analyze(); no model logic here."""
+"""FieldShift Advisor — Streamlit UI. Layout after the Orbit Almanac prototype. No model logic here."""
 from __future__ import annotations
 
+from html import escape
+
 import folium
+import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
+from folium.plugins import Draw
 from streamlit_folium import st_folium
 
-from engine import analyze, config
+from engine import analyze, sample
 
-DISCLAIMER = "This tool supports, and does not replace, your judgment and local agricultural expertise."
 MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-GIBS_DATE = "2024-07-15"
-GIBS_URL = (
-    "https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_TrueColor/"
-    f"default/{GIBS_DATE}/GoogleMapsCompatible_Level9/{{z}}/{{y}}/{{x}}.jpg"
-)
-CUSTOM = "custom"
-RISK_LEVEL = {"low": 1, "medium": 2, "high": 3}
+DISCLAIMER = "This tool supports, and does not replace, your judgment and local agricultural expertise."
+MAP_START, MAP_ZOOM = [45.17, 10.08], 15
+SATELLITE = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
 
-st.set_page_config(page_title="FieldShift Advisor", page_icon="🌾", layout="wide")
-crops = config.crops()
-fields = config.fields()
-crop_ids = [c for c in crops if c != "cover_crop"]
+CSS = """<style>
+.stMainBlockContainer{max-width:920px}
+.eyebrow{font:11px ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:#66756a;margin:0}
+.badge{font:11px ui-monospace,monospace;border:1px solid #9a4a12;color:#9a4a12;border-radius:999px;padding:2px 10px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.tile{background:#f8faf6;border-radius:8px;padding:10px 12px}
+.tile b{display:block;font:500 22px ui-monospace,monospace}
+.tile span{font-size:12px;color:#435247}
+.strip{display:grid;grid-template-columns:3em repeat(12,1fr);gap:2px;font:11px ui-monospace,monospace;text-align:center}
+.strip div{padding:4px 0;border-radius:3px;background:#f8faf6}
+.strip .l{background:none;text-align:left;color:#66756a}
+.strip .heat{background:#fbd9cb}.strip .frost{background:#d3e4f8}
+.rot-head{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:start}
+.rank{font:12px ui-monospace,monospace;width:26px;height:26px;border-radius:50%;border:1px solid #cdd7cc;display:grid;place-items:center}
+.rot-head h4{margin:0;padding:0;font-size:16px}
+.tag{font-size:12px;color:#66756a}
+.score{font:500 28px ui-monospace,monospace;line-height:1}
+.score span{font-size:12px;color:#66756a}
+.meter{position:relative;height:8px;border-radius:4px;background:#f8faf6;border:1px solid #cdd7cc;margin:10px 0 2px}
+.meter i{position:absolute;inset:0 auto 0 0;background:#1f5c3a;border-radius:3px 0 0 3px}
+.meter u{position:absolute;top:-4px;bottom:-4px;border-left:2px solid #152018;border-right:2px solid #152018}
+.small{font-size:12px;color:#66756a;margin:0}
+.why{font-size:14px;color:#435247;margin:8px 0}
+.cal-row{display:grid;grid-template-columns:2.2em repeat(12,minmax(0,1fr));gap:2px;margin-bottom:2px;font:10.5px ui-monospace,monospace;color:#66756a;text-align:center}
+.blk{height:22px;border-radius:4px;padding:0 4px;overflow:hidden;white-space:nowrap;text-align:left;line-height:22px;font-weight:500}
+.cereal{background:#eda100;color:#1b1400}.legume{background:#1baf7a;color:#04180f}
+.cover{background:#6250d6;color:#fff}.other{background:#435247;color:#fff}
+.bare{background:repeating-linear-gradient(135deg,transparent 0 4px,#cdd7cc 4px 6px);border:1px solid #cdd7cc}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:#435247}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-2px;margin-right:5px}
+.keys{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}
+.keys b{display:block;font:500 16px ui-monospace,monospace}
+.keys span{display:block;font-size:11.5px;color:#66756a}
+.bars{display:grid;grid-template-columns:auto 1fr 2em;gap:4px 10px;align-items:center;font-size:12.5px}
+.bars .t{height:6px;border-radius:3px;background:#f8faf6;overflow:hidden}
+.bars .t i{display:block;height:100%;background:#1f5c3a}
+.bars .v{font-family:ui-monospace,monospace;text-align:right}
+.flag{display:inline-block;font-size:12px;border-radius:4px;padding:2px 8px;margin:8px 6px 0 0;background:#f8faf6}
+.flag.heat{background:#fbd9cb}.flag.frost{background:#d3e4f8}
+</style>"""
 
 
-def crop_name(cid: str) -> str:
-    return crops[cid]["name"]
+def month_runs(flags: list[bool]) -> str:
+    """[F,T,T,F,...] -> 'Feb to Mar'. Wraps around the year."""
+    if all(flags):
+        return "all year"
+    start = flags.index(False)
+    runs, m, n = [], start, 0
+    for k in range(1, 13):
+        i = (start + k) % 12
+        if flags[i]:
+            m, n = (i if n == 0 else m), n + 1
+        elif n:
+            runs.append(MONTHS[m] if n == 1 else f"{MONTHS[m]} to {MONTHS[(m + n - 1) % 12]}")
+            n = 0
+    return ", ".join(runs)
 
 
-# ---------------- Sidebar: field, current rotation, priorities ----------------
-with st.sidebar:
-    st.title("🌾 FieldShift Advisor")
-    st.caption(DISCLAIMER)
+def delta(v: float, base: float, unit: str) -> str:
+    d = v - base
+    return "same as current" if abs(d) < 0.05 else f"{d:+.0f} {unit} vs current" if abs(d) >= 1 else f"{d:+.1f} {unit} vs current"
 
-    field_id = st.selectbox(
-        "Field",
-        list(fields) + [CUSTOM],
-        format_func=lambda f: fields[f]["name"] if f in fields else "Custom point (click the map)",
-    )
-    if field_id == CUSTOM:
-        lat = st.session_state.get("click_lat", 45.0)
-        lon = st.session_state.get("click_lon", 10.0)
-        preset = {"name": "Custom point", "lat": lat, "lon": lon,
-                  "current_rotation": ["maize"] * 4, "irrigation": "rainfed"}
-    else:
-        preset = fields[field_id]
 
-    st.subheader("Your current rotation (S0)")
-    rotation = []
-    for y in range(4):
-        default = preset["current_rotation"][y]
-        crop = st.selectbox(f"Year {y + 1}", crop_ids, index=crop_ids.index(default),
-                            format_func=crop_name, key=f"{field_id}_y{y}")
-        rotation.append({"year": y + 1, "crop": crop, "cover": False})
-    irrigation_options = ["rainfed", "deficit", "full"]
-    irrigation = st.selectbox("Irrigation", irrigation_options,
-                              index=irrigation_options.index(preset["irrigation"]), key=f"{field_id}_irr")
+def calendar_html(o: dict) -> str:
+    rows = ['<div class="cal-row"><span></span>' + "".join(f"<span>{m[0]}</span>" for m in MONTHS) + "</div>"]
+    for y in range(o["years"]):
+        cells, blocks, m = o["cal"][y * 12:(y + 1) * 12], [], 0
+        while m < 12:
+            seg = cells[m]["seg"] if cells[m] else None
+            n = 1
+            while m + n < 12 and (cells[m + n]["seg"] if cells[m + n] else None) == seg:
+                n += 1
+            crop = cells[m]["crop"] if cells[m] else None
+            cls, text = (crop["role"], escape(crop["short"])) if crop else ("bare", "")
+            blocks.append(f'<div class="blk {cls}" style="grid-column:span {n}">{text}</div>')
+            m += n
+        rows.append(f'<div class="cal-row"><span>Y{y + 1}</span>{"".join(blocks)}</div>')
+    return "".join(rows)
 
-    st.subheader("What matters to you?")
-    priorities = {
-        "water": st.slider("💧 Save water", 0, 100, 50),
-        "soil": st.slider("🌱 Soil health", 0, 100, 50),
-        "profit": st.slider("💶 Profit", 0, 100, 50),
-        "resilience": st.slider("🌦️ Climate resilience", 0, 100, 50),
-    }
 
-field = {"id": field_id, "name": preset["name"], "lat": preset["lat"], "lon": preset["lon"]}
+def card_html(o: dict, cur: dict, pos: int) -> str:
+    tag = "Current rotation" if o["current"] else f"{o['years']}-year cycle"
+    d = (lambda v, b, u: "") if o["current"] else (lambda v, b, u: f"<span>{delta(v, b, u)}</span>")
+    bars = "".join(
+        f'<span>{label}</span><span class="t"><i style="width:{o["scores"][k]:.0f}%"></i></span><span class="v">{o["scores"][k]:.0f}</span>'
+        for k, label in [(c[0], c[2]) for c in sample.CRITERIA] + [("climate", "Weather fit")])
+    flags = "".join(
+        f'<span class="flag {f["type"]}">{f["type"].title()}: {escape(f["crop"])}, {", ".join(MONTHS[m] for m in f["months"])}</span>'
+        for f in o["flags"]) or '<span class="flag">No frost or heat flags</span>'
+    return f"""
+<div class="rot-head"><div class="rank">{pos}</div>
+  <div><h4>{escape(o["name"])}</h4><div class="tag">{tag}</div></div>
+  <div class="score">{o["score"]:.0f}<span>/100</span></div></div>
+<div class="meter"><i style="width:{o["score"]:.0f}%"></i><u style="left:{o["lo"]:.0f}%;width:{max(o["hi"] - o["lo"], 1):.0f}%"></u></div>
+<p class="small">Dry to wet year: {o["lo"]:.0f} to {o["hi"]:.0f}</p>
+<p class="why">{escape(o["why"])}</p>
+{calendar_html(o)}
+<div class="keys">
+  <div><b>{o["water_gap_mm"]:.0f} mm</b><span>water gap per year</span>{d(o["water_gap_mm"], cur["water_gap_mm"], "mm")}</div>
+  <div><b>{o["bare_months"]:.1f}</b><span>bare months per year</span>{d(o["bare_months"], cur["bare_months"], "mo")}</div>
+  <div><b>{o["syn_n_kg"]:.0f} kg</b><span>fertiliser N per ha</span>{d(o["syn_n_kg"], cur["syn_n_kg"], "kg")}</div>
+</div>
+<div class="bars">{bars}</div>
+<div>{flags}</div>"""
 
-# ---------------- Header + map ----------------
-st.info(DISCLAIMER, icon="🤝")
-col_map, col_climate = st.columns([3, 2])
 
-with col_map:
-    m = folium.Map(location=[field["lat"], field["lon"]], zoom_start=12, tiles="OpenStreetMap")
-    folium.TileLayer(tiles=GIBS_URL, attr="NASA GIBS / MODIS Terra", name=f"NASA MODIS true colour {GIBS_DATE}",
-                     max_native_zoom=9, max_zoom=18, overlay=True, opacity=0.7).add_to(m)
-    folium.Marker([field["lat"], field["lon"]], tooltip=field["name"]).add_to(m)
-    folium.LayerControl().add_to(m)
-    out = st_folium(m, height=380, use_container_width=True, key="map")
-    if field_id == CUSTOM and out and out.get("last_clicked"):
-        click = out["last_clicked"]
-        if (click["lat"], click["lng"]) != (st.session_state.get("click_lat"), st.session_state.get("click_lon")):
-            st.session_state["click_lat"], st.session_state["click_lon"] = click["lat"], click["lng"]
-            st.rerun()
+st.set_page_config(page_title="FieldShift Advisor", page_icon="🌾", layout="centered")
+st.html(CSS)
+st.html('<p class="eyebrow">NASA Space Apps 2026 · crop rotation · <span class="badge">SAMPLE DATA</span></p>')
+st.title("FieldShift Advisor")
+st.caption("Mark your field, say what matters to you, and compare your rotation with alternatives.")
 
-# ---------------- What-if ----------------
-st.subheader("What if the climate changes?")
-w1, w2 = st.columns(2)
-whatif = {
-    "rain_pct": w1.slider("Rainfall change (%)", -40, 20, 0, step=5),
-    "temp_delta_c": w2.slider("Temperature change (°C)", 0.0, 4.0, 0.0, step=0.5),
-}
+# ---------------- The field ----------------
+st.subheader("The field")
 
-try:
-    with st.spinner("Reading NASA POWER data…"):
-        result = analyze(field, rotation, irrigation, priorities, whatif)
-except RuntimeError as exc:
-    st.error(str(exc))
-    st.stop()
 
-if result["data_status"] == "sample":
-    st.warning("SAMPLE DATA — strategy scores are placeholders until the engine is finished.", icon="🚧")
-for note in result["notes"]:
-    st.caption(note)
+@st.fragment
+def field_map() -> None:
+    """Draw the field with 4 corners. Stores st.session_state["points"] (lat, lon) and
+    ["bbox"] (lon_min, lat_min, lon_max, lat_max). A fragment, so drawing does not rerun the whole page."""
+    fmap = folium.Map(location=MAP_START, zoom_start=MAP_ZOOM, tiles=SATELLITE, attr="Esri World Imagery")
+    Draw(draw_options={"polyline": False, "rectangle": False, "circle": False, "circlemarker": False, "marker": False,
+                       "polygon": {"shapeOptions": {"color": "#ffffff", "weight": 2}}}).add_to(fmap)
+    out = st_folium(fmap, height=360, use_container_width=True, key="map", returned_objects=["all_drawings"])
+    drawings = (out or {}).get("all_drawings") or []
+    ring = drawings[-1]["geometry"]["coordinates"][0][:-1] if drawings else []  # (lon, lat); last repeats the first
+    pts = [(round(lat, 5), round(lon, 5)) for lon, lat in ring]
+    st.session_state["points"] = pts
+    st.session_state.pop("bbox", None)
+    if len(pts) != 4:
+        st.caption("Pick the polygon tool on the map and click the 4 corners of your field."
+                   + (f" This shape has {len(pts)} corners; draw exactly 4." if pts else ""))
+        return
+    st.caption(" · ".join(f"{i}: {la:.5f}, {lo:.5f}" for i, (la, lo) in enumerate(pts, 1)))
+    lats, lons = [p[0] for p in pts], [p[1] for p in pts]
+    st.session_state["bbox"] = (min(lons), min(lats), max(lons), max(lats))
+    st.code("bbox = ({:.5f}, {:.5f}, {:.5f}, {:.5f})  # lon_min, lat_min, lon_max, lat_max".format(
+        *st.session_state["bbox"]), language="python")
 
-# ---------------- What NASA data says ----------------
-with col_climate:
-    st.subheader("What NASA data says about this field")
-    for key, metric in result["climate"].items():
-        st.metric(metric["note"], f"{metric['value']:g} {metric['unit']}")
-    first = next(iter(result["climate"].values()))
-    st.caption(f"Source: {first['source']}")
 
-# ---------------- Strategy cards ----------------
-st.subheader("Your rotation vs. alternatives")
-strategies = result["strategies"]
-cols = st.columns(len(strategies))
-for col, s in zip(cols, strategies):
-    with col:
-        st.markdown(f"### {s['id']} · {s['label']}")
-        st.write(" → ".join(crop_name(cy["crop"]) + (" +cover" if cy["cover"] else "") for cy in s["rotation"]))
-        st.caption(f"Irrigation: {s['irrigation']}")
-        axes = ["water", "soil", "profit", "resilience"]
-        radar = go.Figure(go.Scatterpolar(r=[s["scores"][a] for a in axes] + [s["scores"][axes[0]]],
-                                          theta=axes + [axes[0]], fill="toself"))
-        radar.update_layout(height=220, margin=dict(l=30, r=30, t=10, b=10), showlegend=False,
-                            polar=dict(radialaxis=dict(range=[0, 100], showticklabels=False)))
-        st.plotly_chart(radar, width="stretch", key=f"radar_{s['id']}")
-        for key, metric in s["metrics"].items():
-            delta = s["delta_vs_s0"].get(key)
-            st.metric(key.replace("_", " "), f"{metric['value']:g} {metric['unit']}",
-                      delta=None if s["id"] == "S0" or not delta else f"{delta:+g} vs S0")
-        card = s["evidence_card"]
-        with st.expander("Evidence card"):
-            st.markdown(f"**Why:** {card['why']}")
-            st.markdown("**Evidence**")
-            for e in card["evidence"]:
-                st.markdown(f"- {e['claim']}  \n  _{e['source']} · confidence {e['confidence']}_")
-            st.markdown("**Benefits**\n" + "\n".join(f"- ✅ {b}" for b in card["benefits"]))
-            st.markdown("**Risks**\n" + "\n".join(f"- ⚠️ {r}" for r in card["risks"]))
-            st.markdown("**Information gaps**\n" + "\n".join(f"- {g}" for g in card["information_gaps"]))
-            st.markdown("**Needs local review**\n" + "\n".join(f"- 🔎 {n}" for n in card["needs_local_review"]))
-            st.caption(f"Confidence: {card['confidence']}")
+field_map()
 
-# ---------------- Calendars ----------------
-st.subheader("When is the field bare?")
-bare = go.Figure(go.Heatmap(
-    z=[s["calendars"]["bare_months"] for s in strategies],
-    x=MONTHS, y=[f"{s['id']} {s['label']}" for s in strategies],
-    zmin=0, zmax=1, colorscale="YlOrBr", colorbar=dict(title="share of years bare"),
-))
-bare.update_layout(height=60 + 40 * len(strategies), margin=dict(l=10, r=10, t=10, b=10))
-st.plotly_chart(bare, width="stretch")
+cols = st.columns(3)
+settings = {}
+for col, (key, label, opts) in zip(cols, [("soil", "Soil texture", sample.SOILS), ("slope", "Slope", sample.SLOPES),
+                                          ("access", "Water access", sample.ACCESS)]):
+    settings[key] = col.segmented_control(label, list(opts), default=sample.DEFAULTS[key], key=key,
+                                          format_func=lambda k, o=opts: o[k]["label"]) or sample.DEFAULTS[key]
 
-st.subheader("When are the crops vulnerable?")
-pick = st.selectbox("Strategy", [s["id"] for s in strategies],
-                    format_func=lambda sid: next(f"{s['id']} {s['label']}" for s in strategies if s["id"] == sid))
-vuln = next(s for s in strategies if s["id"] == pick)["calendars"]["vulnerability"]
-vfig = go.Figure(go.Heatmap(
-    z=[[RISK_LEVEL.get(r) for r in levels] for levels in vuln.values()],
-    x=MONTHS, y=[crop_name(c) for c in vuln], zmin=1, zmax=3,
-    colorscale=[[0, "#d9f0d3"], [0.5, "#fdd49e"], [1, "#d7301f"]],
-    colorbar=dict(tickvals=[1, 2, 3], ticktext=["low", "medium", "high"]),
-))
-vfig.update_layout(height=60 + 40 * len(vuln), margin=dict(l=10, r=10, t=10, b=10))
-st.plotly_chart(vfig, width="stretch")
+climate_box = st.container()
 
-# ---------------- Learn + methods ----------------
-with st.expander("📚 Learn: the terms used here"):
-    st.markdown("TODO (Dev B): evapotranspiration, water balance, frost risk, cover crops, nitrogen-fixing crops.")
-with st.expander("🔬 Data & methods"):
-    st.markdown("TODO (Dev B): datasets, formulas, limitations. See README.md → Data.")
+# ---------------- What matters to you ----------------
+st.subheader("What matters to you")
+preset = st.segmented_control("Priorities", list(sample.PRESETS), default="balanced", label_visibility="collapsed",
+                              format_func=lambda k: sample.PRESETS[k]["label"]) or "balanced"
+with st.expander("Fine-tune each priority"):
+    wcols = st.columns(3)
+    weights = {cid: wcols[i % 3].slider(label, 0, 5, sample.PRESETS[preset]["w"][cid], key=f"w_{preset}_{cid}")
+               for i, (cid, label, _) in enumerate(sample.CRITERIA)}
+s1, s2 = st.columns(2)
+rain_pct = s1.slider("What if rainfall changes (%)", -40, 20, 0, step=5)
+temp_delta = s2.slider("What if it gets warmer (°C)", 0.0, 4.0, 0.0, step=0.5)
+
+result = analyze(settings["soil"], settings["slope"], settings["access"], weights, rain_pct, temp_delta)
+clim, options = result["climate"], result["options"]
+current = next(o for o in options if o["current"])
+
+# ---------------- What the climate record says ----------------
+with climate_box:
+    st.subheader("What the climate record says")
+    tiles = [(f"{clim['rain_mm']:.0f} mm", "rain per year"), (f"{clim['et0_mm']:.0f} mm", "reference water demand per year"),
+             (f"{sum(clim['short'])} of 12", "months when demand exceeds rain"),
+             (f"{sum(clim['frost'])}", "months with frost-prone nights")]
+    st.html('<div class="tiles">' + "".join(f'<div class="tile"><b>{v}</b><span>{t}</span></div>' for v, t in tiles) + "</div>")
+
+    bare = [v >= 0.5 for v in current["bare_by_month"]]
+    fig = go.Figure()
+    fig.add_bar(x=MONTHS, y=clim["P"], name="Rain, mm", marker_color="#2a78d6")
+    fig.add_scatter(x=MONTHS, y=clim["ET0"], name="Water demand, mm", line=dict(color="#eb6834", width=3))
+    for m, is_bare in enumerate(bare):
+        if is_bare:
+            fig.add_vrect(x0=m - 0.5, x1=m + 0.5, fillcolor="#66756a", opacity=0.12, line_width=0)
+    fig.update_layout(height=240, margin=dict(l=0, r=0, t=30, b=0), legend=dict(orientation="h", y=1.2),
+                      paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", yaxis=dict(gridcolor="#cdd7cc"))
+    st.plotly_chart(fig, width="stretch", config={"displayModeBar": False})
+
+    strip = '<div class="l"></div>' + "".join(f'<div class="l" style="text-align:center">{m[0]}</div>' for m in MONTHS)
+    strip += '<div class="l">High</div>' + "".join(f'<div class="{"heat" if h else ""}">{t:.0f}</div>' for t, h in zip(clim["Tx"], clim["heat"]))
+    strip += '<div class="l">Low</div>' + "".join(f'<div class="{"frost" if f else ""}">{t:.0f}</div>' for t, f in zip(clim["Tn"], clim["frost"]))
+    st.html(f'<div class="strip">{strip}</div>')
+    st.caption("°C. Shaded: high above 32 °C, night low below 1 °C. Grey bands in the chart: field bare in the current rotation.")
+
+    finds = [f"**Water:** demand exceeds rain {month_runs(clim['short'])}, by {clim['deficit_mm']:.0f} mm in total."
+             if any(clim["short"]) else "**Water:** rain exceeds demand in every month."]
+    if any(bare):
+        wet = sum(p for p, b in zip(clim["P"], bare) if b)
+        finds.append(f"**Bare field:** no crop {month_runs(bare)}. {wet:.0f} mm of rain "
+                     f"({100 * wet / clim['rain_mm']:.0f}% of the year) falls then.")
+    st.markdown("\n".join(f"- {f}" for f in finds))
+
+# ---------------- Rotation options ----------------
+st.subheader("Rotation options, ranked for this field")
+best, pos = options[0], options.index(current) + 1
+st.caption(f"Your current rotation ranks {pos} of {len(options)}. "
+           + (f"The top alternative scores {best['score'] - current['score']:.0f} points higher." if best is not current
+              else "No alternative scores higher."))
+st.html('<div class="legend"><span><i style="background:#eda100"></i>Cereal</span>'
+        '<span><i style="background:#1baf7a"></i>Legume</span><span><i style="background:#6250d6"></i>Cover or forage</span>'
+        '<span><i class="bare"></i>Bare soil</span></div>')
+rcols = st.columns(2)
+for i, o in enumerate(options):
+    with rcols[i % 2].container(border=True):
+        st.html(card_html(o, current, i + 1))
+        with st.expander("Evidence, gaps, local review"):
+            for title, items in [("Benefits", o["benefits"]), ("What the model does not know", o["gaps"]),
+                                 ("Needs local review", o["risks"])]:
+                st.markdown(f"**{title}**\n" + "\n".join(f"- {t}" for t in items))
+
+# ---------------- Side by side ----------------
+st.subheader("Side by side")
+st.dataframe(pd.DataFrame([{
+    "Rotation": o["name"] + (" (current)" if o["current"] else ""),
+    "Score": round(o["score"]),
+    "Water gap, mm": round(o["water_gap_mm"]),
+    "Gap in a dry year, mm": round(o["gap_dry_mm"]),
+    "Bare months": round(o["bare_months"], 1),
+    "Rain on exposed soil, %": round(100 * o["exposed_frac"]),
+    "Fertiliser N, kg/ha": round(o["syn_n_kg"]),
+    "Residue, t/ha": round(o["residue_t"], 1),
+    "Heat or frost months": round(o["heat_frost_months"], 1),
+} for o in options]), hide_index=True, width="stretch")
+st.caption("Water gap: crop demand that rain and stored soil water do not cover. Revenue is a placeholder index.")
+
+# ---------------- How it works ----------------
+st.subheader("How it works")
+with st.expander("What is real and what is sample"):
+    st.markdown(
+        "- **Sample:** climate, crops and rotations are hand-entered values, not a dataset. The map points are not used yet.\n"
+        "- **Computed:** monthly water balance, soil cover, nitrogen, pest break and weather fit, weighted by your priorities.\n"
+        "- **Not validated:** nothing here was checked against field records or by an agronomist.")
+with st.expander("Terms"):
+    st.markdown(
+        "- **Reference water demand:** water a well-watered grass surface would use (evapotranspiration).\n"
+        "- **Water gap:** crop demand left unmet by rain and soil water.\n"
+        "- **Cover crop:** grown to protect and feed the soil between cash crops, not for harvest.\n"
+        "- **Nitrogen fixing:** legumes turn nitrogen from air into a form plants use.")
+st.caption(DISCLAIMER)
