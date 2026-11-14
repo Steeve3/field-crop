@@ -1,0 +1,26 @@
+# Demo fields (Italy). Points are approximate farmland locations — check on the map.
+# current_rotation = S0, 4 years. Crop ids must exist in crops.yaml.
+
+po_valley_maize:
+  name: "Po Valley — irrigated maize (Cremona)"
+  lat: 45.13
+  lon: 10.03
+  current_rotation: [maize, maize, maize, maize]
+  irrigation: full
+  story: "Continuous irrigated maize; 2022 drought cut river water for irrigation."
+
+puglia_durum:
+  name: "Tavoliere, Puglia — rainfed durum wheat (Foggia)"
+  lat: 41.46
+  lon: 15.55
+  current_rotation: [durum_wheat, durum_wheat, durum_wheat, durum_wheat]
+  irrigation: rainfed
+  story: "Durum wheat monoculture in a dry Mediterranean climate; bare soil all summer."
+
+emilia_alfalfa:
+  name: "Emilia — alfalfa and maize (Reggio Emilia)"
+  lat: 44.75
+  lon: 10.55
+  current_rotation: [alfalfa, alfalfa, alfalfa, maize]
+  irrigation: deficit
+  story: "Alfalfa for dairy forage (Parmigiano Reggiano area) followed by maize."
