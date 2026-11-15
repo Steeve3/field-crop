@@ -1,7 +1,8 @@
 """Build one placeholder crop table per farmer, same columns as the terrain notebook output.
 
 Climate suitability (adattabilita_pct) is real: the mean of the FAO GAEZ grid cells of
-data/toscana_crop_suitability.csv that fall inside the farmer's bbox.
+data/toscana_crop_suitability.csv that fall inside the farmer's bbox, or the cell nearest the
+bbox centre when the field is smaller than a cell (the grid step is about 9 km).
 The final score (punteggio_finale) and the notes apply the terrain notebook's own rules, but
 with the SAMPLE terrain shares in engine/sample.py instead of measured ones.
 Replace data/score_<farmer>.csv with the real notebook output when it is available.
@@ -56,17 +57,20 @@ def adjust(code: str, score: float, terrain: dict) -> tuple[float, str]:
 
 def main() -> None:
     grid = pd.read_csv(DATA / "toscana_crop_suitability.csv")
-    meta = pd.read_csv(DATA / "score_colture.csv").set_index("crop_code")  # names, categories, raster paths
+    meta = (pd.read_csv(DATA / "toscana_water_and_yield.csv", usecols=["crop_code", "crop_name", "category"])
+            .drop_duplicates("crop_code").set_index("crop_code"))  # crop names and categories
     codes = [c for c in grid.columns if c not in ("cell_id", "latitude", "longitude")]
     for f in sample.FARMERS:
         lon0, lat0, lon1, lat1 = f["bbox"]
         cells = grid[grid.longitude.between(lon0, lon1) & grid.latitude.between(lat0, lat1)]
+        if cells.empty:  # fields are smaller than a ~9 km grid cell: use the cell nearest the field centre
+            lon_c, lat_c = (lon0 + lon1) / 2, (lat0 + lat1) / 2
+            cells = grid.loc[[(((grid.longitude - lon_c) * 0.73) ** 2 + (grid.latitude - lat_c) ** 2).idxmin()]]
         rows = []
         for code in codes:
             climate = round(float(cells[code].mean()) * 100, 1)
             final, note = adjust(code, climate, f["terrain"])
             rows.append({"crop_code": code, "crop_name": meta.at[code, "crop_name"], "category": meta.at[code, "category"],
-                         "raster_path": meta.at[code, "raster_path"], "raster_available": True,
                          "adattabilita_pct": climate, "punteggio_finale": final, "note_agronomiche": note})
         table = pd.DataFrame(rows).sort_values("punteggio_finale", ascending=False, kind="stable").reset_index(drop=True)
         table.insert(0, "posizione", table.index + 1)

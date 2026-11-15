@@ -17,7 +17,7 @@ SOURCE = "SAMPLE — hand-entered values, not a dataset"
 # climate = SAMPLE monthly normals, hand-entered and approximate: T = mean, Tx = mean daily high,
 # Tn = mean night low (°C), P = rain (mm).
 FARMERS = [
-    {"id": "asciano", "name": "Giulia Bianchi", "area": "Asciano", "bbox": (11.46, 43.14, 11.66, 43.28),
+    {"id": "asciano", "name": "Giulia Bianchi", "area": "Asciano", "bbox": (11.564102, 43.215159, 11.571898, 43.220841),
      "crops_csv": "score_asciano.csv", "defaults": {"soil": "clay", "slope": "gentle", "access": "rainfed"},
      "terrain": {"erosion": 0.45, "waterlogging": 0.05, "drought": 0.35},   # clay hills
      "climate": {"lat": 43.21,
@@ -25,7 +25,7 @@ FARMERS = [
                  "Tx": [9.8, 11.2, 14.8, 18.3, 23.3, 27.9, 31.4, 31.3, 26.2, 20.5, 14.3, 10.4],
                  "Tn": [1.6, 1.9, 4.2, 6.9, 10.9, 14.6, 17.2, 17.3, 14.1, 10.5, 6.0, 2.7],
                  "P": [55, 55, 55, 65, 60, 50, 30, 45, 70, 90, 100, 70]}},
-    {"id": "mugello", "name": "Marco Rossi", "area": "Mugello", "bbox": (11.30, 43.92, 11.50, 44.06),
+    {"id": "mugello", "name": "Marco Rossi", "area": "Mugello", "bbox": (11.381053, 43.965159, 11.388947, 43.970841),
      "crops_csv": "score_mugello.csv", "defaults": {"soil": "loam", "slope": "gentle", "access": "limited"},
      "terrain": {"erosion": 0.35, "waterlogging": 0.20, "drought": 0.10},   # wet mountain valley
      "climate": {"lat": 43.99,
@@ -33,7 +33,7 @@ FARMERS = [
                  "Tx": [8.5, 10.4, 14.5, 18.2, 23.2, 27.5, 31.0, 30.9, 25.8, 19.8, 13.2, 9.0],
                  "Tn": [-0.3, 0.3, 2.8, 5.6, 9.6, 13.2, 15.5, 15.4, 12.3, 8.8, 4.6, 0.8],
                  "P": [90, 85, 85, 95, 80, 60, 40, 55, 90, 125, 140, 105]}},
-    {"id": "val_di_chiana", "name": "Elena Conti", "area": "Val di Chiana", "bbox": (11.76, 43.20, 11.96, 43.34),
+    {"id": "val_di_chiana", "name": "Elena Conti", "area": "Val di Chiana", "bbox": (11.801100, 43.247159, 11.808900, 43.252841),
      "crops_csv": "score_val_di_chiana.csv", "defaults": {"soil": "loam", "slope": "flat", "access": "limited"},
      "terrain": {"erosion": 0.05, "waterlogging": 0.30, "drought": 0.25},   # flat reclaimed plain
      "climate": {"lat": 43.27,
