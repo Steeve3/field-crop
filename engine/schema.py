@@ -54,3 +54,20 @@ class AnalysisResult(TypedDict):
     source: str
     climate: Climate
     options: list[Option]   # best first
+
+
+class CropScore(TypedDict):
+    rank: int
+    code: str
+    name: str
+    category: str
+    climate_pct: float      # FAO GAEZ climate suitability, 0-100
+    score_pct: float        # after terrain bonuses/penalties, 0-100
+    note: str
+
+
+class CropRanking(TypedDict):
+    bbox: tuple[float, float, float, float]   # lon_min, lat_min, lon_max, lat_max the table was computed for
+    source: str
+    terrain_adjusted: bool  # False when every score equals the climate suitability
+    crops: list[CropScore]  # best first

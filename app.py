@@ -10,9 +10,10 @@ import streamlit as st
 from folium.plugins import Draw
 from streamlit_folium import st_folium
 
-from engine import analyze, sample
+from engine import analyze, crop_ranking, sample
 
 MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+TOP_CROPS = 10
 DISCLAIMER = "This tool supports, and does not replace, your judgment and local agricultural expertise."
 MAP_START, MAP_ZOOM = [45.17, 10.08], 15
 SATELLITE = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
@@ -152,9 +153,7 @@ def field_map() -> None:
         return
     st.caption(" · ".join(f"{i}: {la:.5f}, {lo:.5f}" for i, (la, lo) in enumerate(pts, 1)))
     lats, lons = [p[0] for p in pts], [p[1] for p in pts]
-    st.session_state["bbox"] = (min(lons), min(lats), max(lons), max(lats))
-    st.code("bbox = ({:.5f}, {:.5f}, {:.5f}, {:.5f})  # lon_min, lat_min, lon_max, lat_max".format(
-        *st.session_state["bbox"]), language="python")
+    st.session_state["bbox"] = (min(lons), min(lats), max(lons), max(lats))  # kept for later, not shown
 
 
 field_map()
@@ -165,6 +164,21 @@ for col, (key, label, opts) in zip(cols, [("soil", "Soil texture", sample.SOILS)
                                           ("access", "Water access", sample.ACCESS)]):
     settings[key] = col.segmented_control(label, list(opts), default=sample.DEFAULTS[key], key=key,
                                           format_func=lambda k, o=opts: o[k]["label"]) or sample.DEFAULTS[key]
+
+# ---------------- Best crops for this region ----------------
+st.subheader("Best crops for this region")
+ranking = crop_ranking()
+crop_rows = pd.DataFrame([{"#": c["rank"], "Crop": c["name"], "Category": c["category"], "Suitability": c["score_pct"],
+                           "Note": c["note"]} for c in ranking["crops"]])
+if not ranking["terrain_adjusted"]:
+    crop_rows = crop_rows.drop(columns="Note")  # every note is the same, so the column says nothing
+score_col = {"Suitability": st.column_config.ProgressColumn("Suitability", format="%.1f%%", min_value=0,
+                                                            max_value=float(crop_rows["Suitability"].max()))}
+st.dataframe(crop_rows.head(TOP_CROPS), hide_index=True, width="stretch", column_config=score_col)
+st.caption("Fixed region ({}, {}, {}, {}): it does not change with the field you draw yet. Bars are relative to the "
+           "best crop. Source: {}.".format(*ranking["bbox"], ranking["source"]))
+with st.expander(f"All {len(crop_rows)} crops"):
+    st.dataframe(crop_rows, hide_index=True, width="stretch", column_config=score_col)
 
 climate_box = st.container()
 
