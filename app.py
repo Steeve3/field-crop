@@ -111,7 +111,6 @@ def card_html(o: dict, cur: dict, pos: int) -> str:
   <div class="score">{o["score"]:.0f}<span>/100</span></div></div>
 <div class="meter"><i style="width:{o["score"]:.0f}%"></i><u style="left:{o["lo"]:.0f}%;width:{max(o["hi"] - o["lo"], 1):.0f}%"></u></div>
 <p class="small">Dry to wet year: {o["lo"]:.0f} to {o["hi"]:.0f}</p>
-<p class="why">{escape(o["why"])}</p>
 {calendar_html(o)}
 <div class="keys">
   <div><b>{o["water_gap_mm"]:.0f} mm</b><span>water gap per year</span>{d(o["water_gap_mm"], cur["water_gap_mm"], "mm")}</div>
@@ -165,9 +164,9 @@ crop_rows = pd.DataFrame([{"#": c["rank"], "Crop": c["name"], "Final score": c["
 st.dataframe(crop_rows, hide_index=True, width="stretch", column_config={
     "#": st.column_config.NumberColumn(width="small"),
     "Final score": st.column_config.ProgressColumn(format="%.1f%%", min_value=0, width="medium",
-                                                   max_value=float(crop_rows["Final score"].max())),
+                                                   max_value=100),
     "Notes": st.column_config.TextColumn(width="large")})
-st.caption(f"Bars are relative to the best crop. Source: {ranking['source']}.")
+st.caption(f"Source: {ranking['source']}.")
 
 climate_box = st.container()
 
@@ -233,10 +232,6 @@ rcols = st.columns(2)
 for i, o in enumerate(options):
     with rcols[i % 2].container(border=True):
         st.html(card_html(o, current, i + 1))
-        with st.expander("Evidence, gaps, local review"):
-            for title, items in [("Benefits", o["benefits"]), ("What the model does not know", o["gaps"]),
-                                 ("Needs local review", o["risks"])]:
-                st.markdown(f"**{title}**\n" + "\n".join(f"- {t}" for t in items))
 
 # ---------------- Side by side ----------------
 st.subheader("Side by side")

@@ -12,9 +12,7 @@ from pathlib import Path
 from . import sample
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
-# The current files are placeholders built by scripts/build_crop_tables.py. Update this text when the
-# real notebook output replaces them.
-SOURCE = "FAO GAEZ v5 climate suitability, adjusted for terrain risks (sample terrain shares)"
+SOURCE = "FAO GAEZ v5 crop suitability (terrain notebook output)"
 
 # The notebook writes its notes in Italian; the UI is in English.
 NOTES_EN = {
@@ -39,6 +37,8 @@ def crop_ranking(farmer_id: str) -> dict:
     """All crops for the farmer's area, best first. Scores are percentages (0-100)."""
     farmer = sample.FARMER[farmer_id]
     with (DATA_DIR / farmer["crops_csv"]).open(encoding="utf-8", newline="") as f:
+        sep = ";" if ";" in f.readline() else ","   # the notebook export may use either
+        f.seek(0)
         crops = [{
             "rank": int(r["posizione"]),
             "code": r["crop_code"],
@@ -47,7 +47,7 @@ def crop_ranking(farmer_id: str) -> dict:
             "climate_pct": float(r["adattabilita_pct"]),   # FAO GAEZ climate suitability
             "score_pct": float(r["punteggio_finale"]),     # after terrain bonuses/penalties
             "note": _note_en(r["note_agronomiche"]),
-        } for r in csv.DictReader(f)]
+        } for r in csv.DictReader(f, delimiter=sep)]
     crops.sort(key=lambda c: c["rank"])
     return {
         "bbox": farmer["bbox"],
