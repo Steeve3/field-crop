@@ -13,7 +13,7 @@ The bounding box is the input of the terrain notebook (NASADEM + HLS + FAO GAEZ)
 ## Ownership (do not edit the other person's files)
 | Area | Owner | Files |
 |---|---|---|
-| Engine | Dev A | `engine/`, `data/`, `tests/`, `scripts/` |
+| Engine | Dev A | `engine/`, `data/`, `tests/` |
 | App & demo | Dev B | `app.py`, `ui/` (if created), `.streamlit/` |
 | Shared contract | both, agree out loud first | `engine/schema.py` |
 
@@ -22,14 +22,11 @@ The app only calls `engine.analyze(...)` and reads the dict shape in
 
 ## Hard rules
 1. **No invented numbers.** Every number shown to the user comes from the engine
-   (computed from data) or from `data/*.yaml`. The only exception is
-   `engine/sample.py`, which is clearly labelled SAMPLE and is deleted once the
-   engine works.
+   (computed from data) or from a CSV in `data/`. The only exception is
+   `engine/sample.py`, which is clearly labelled SAMPLE and is replaced by real data later.
 2. **Every number has a source.** Use the `Metric` shape (`value`, `unit`, `source`, `note`).
-3. **Every default in YAML is tagged** with `# SOURCE: ...` or `# ASSUMPTION: ...`.
-   No magic numbers in Python code.
-4. **Never crash on stage.** NASA POWER: live → disk cache → error message. Show
-   `data_status` ("live" / "cached") in the UI.
+3. **Every default is tagged** with `# SOURCE: ...` or `# ASSUMPTION: ...`.
+4. **Never crash on stage.** Read local files only during the demo; show `data_status` in the UI.
 5. **Supportive tool.** The UI always shows: "This tool supports, and does not
    replace, your judgment and local agricultural expertise." Use hedged language
    ("may", "could", "under these assumptions"). No legal, subsidy, water-rights or
@@ -43,8 +40,12 @@ The app only calls `engine.analyze(...)` and reads the dict shape in
 pip install -r requirements.txt
 streamlit run app.py
 pytest -q
-python scripts/prefetch_demo.py   # refresh cached NASA POWER data for demo fields
 ```
+
+## Adding a CSV
+Copy the pattern of `engine/crop_scores.py`: put the file in `data/`, write one cached loader
+in `engine/` that returns plain dicts with English names and units, export it in
+`engine/__init__.py`, describe its shape in `engine/schema.py`, render it in `app.py`, add a test.
 
 ## Conventions
 - Python 3.11+, type hints, plain functions, no classes unless needed.
