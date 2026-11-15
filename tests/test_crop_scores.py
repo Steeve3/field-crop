@@ -1,16 +1,20 @@
-"""Checks on the fixed-region crop ranking (data/score_colture.csv)."""
-from engine import crop_ranking
+"""Checks on the crop ranking of every farmer (one CSV per area in data/)."""
+from engine import crop_ranking, sample
 
 
-def test_ranking_is_complete_and_ordered():
-    r = crop_ranking()
-    crops = r["crops"]
-    assert len(crops) == 77 and len({c["code"] for c in crops}) == 77
-    assert [c["rank"] for c in crops] == list(range(1, 78))
-    scores = [c["score_pct"] for c in crops]
-    assert scores == sorted(scores, reverse=True) and all(0 <= s <= 100 for s in scores)
-    assert len(r["bbox"]) == 4
+def test_every_farmer_has_a_complete_ordered_ranking():
+    for f in sample.FARMERS:
+        r = crop_ranking(f["id"])
+        scores = [c["score_pct"] for c in r["crops"]]
+        assert len(scores) > 0 and len({c["code"] for c in r["crops"]}) == len(scores), f["id"]
+        assert scores == sorted(scores, reverse=True) and all(0 <= s <= 100 for s in scores), f["id"]
+        assert r["bbox"] == f["bbox"]
 
 
-def test_notes_are_translated():
-    assert all("Adattabilit" not in c["note"] for c in crop_ranking()["crops"])
+def test_tables_differ_and_notes_are_english():
+    tops = [tuple(c["code"] for c in crop_ranking(f["id"])["crops"][:5]) for f in sample.FARMERS]
+    assert len(set(tops)) == len(tops)
+    for f in sample.FARMERS:
+        notes = {c["note"] for c in crop_ranking(f["id"])["crops"]}
+        assert len(notes) > 1, f["id"]
+        assert not any(w in n.lower() for n in notes for w in ("favorita", "penalizzata", "adattabilit")), f["id"]

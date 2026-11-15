@@ -5,13 +5,14 @@ from . import model, sample
 from .schema import AnalysisResult
 
 
-def analyze(soil: str = "loam", slope: str = "flat", access: str = "limited", weights: dict | None = None,
-            rain_pct: float = 0.0, temp_delta_c: float = 0.0) -> AnalysisResult:
-    """Field settings + priorities + what-if -> climate read and ranked rotations (current one included)."""
+def analyze(farmer_id: str, soil: str = "loam", slope: str = "flat", access: str = "limited",
+            weights: dict | None = None, rain_pct: float = 0.0, temp_delta_c: float = 0.0) -> AnalysisResult:
+    """Farmer + field settings + priorities + what-if -> climate read and ranked rotations (current one included)."""
+    base = sample.FARMER[farmer_id]["climate"]
     weights = weights or sample.PRESETS["balanced"]["w"]
-    options = model.rank(sample.CLIMATE, sample.ROTATIONS, sample.CROPS, sample.SOILS[soil], sample.SLOPES[slope],
+    options = model.rank(base, sample.ROTATIONS, sample.CROPS, sample.SOILS[soil], sample.SLOPES[slope],
                          sample.ACCESS[access], weights, rain_pct, temp_delta_c)
-    c = model.climate_for(sample.CLIMATE, rain_pct, temp_delta_c)
+    c = model.climate_for(base, rain_pct, temp_delta_c)
     short = [e > p for e, p in zip(c["ET0"], c["P"])]
     climate = {
         **c,

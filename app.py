@@ -7,7 +7,6 @@ import folium
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
-from folium.plugins import Draw
 from streamlit_folium import st_folium
 
 from engine import analyze, crop_ranking, sample
@@ -15,7 +14,6 @@ from engine import analyze, crop_ranking, sample
 MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 TOP_CROPS = 10
 DISCLAIMER = "This tool supports, and does not replace, your judgment and local agricultural expertise."
-MAP_START, MAP_ZOOM = [45.17, 10.08], 15
 SATELLITE = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
 
 CSS = """<style>
@@ -128,57 +126,48 @@ st.set_page_config(page_title="FieldShift Advisor", page_icon="🌾", layout="ce
 st.html(CSS)
 st.html('<p class="eyebrow">NASA Space Apps 2026 · crop rotation · <span class="badge">SAMPLE DATA</span></p>')
 st.title("FieldShift Advisor")
-st.caption("Mark your field, say what matters to you, and compare your rotation with alternatives.")
+st.caption(DISCLAIMER)
+
+# ---------------- Who are you ----------------
+for col, f in zip(st.columns(len(sample.FARMERS)), sample.FARMERS):
+    chosen = st.session_state.get("farmer") == f["id"]
+    if col.button(f"**{f['name']}** · {f['area']}", key=f"farmer_{f['id']}",
+                  type="primary" if chosen else "secondary", use_container_width=True):
+        st.session_state["farmer"] = f["id"]
+        st.rerun()
+if "farmer" not in st.session_state:
+    st.caption("Choose a farmer to open their field.")
+    st.stop()
+farmer = sample.FARMER[st.session_state["farmer"]]
 
 # ---------------- The field ----------------
-st.subheader("The field")
-
-
-@st.fragment
-def field_map() -> None:
-    """Draw the field with 4 corners. Stores st.session_state["points"] (lat, lon) and
-    ["bbox"] (lon_min, lat_min, lon_max, lat_max). A fragment, so drawing does not rerun the whole page."""
-    fmap = folium.Map(location=MAP_START, zoom_start=MAP_ZOOM, tiles=SATELLITE, attr="Esri World Imagery")
-    Draw(draw_options={"polyline": False, "rectangle": False, "circle": False, "circlemarker": False, "marker": False,
-                       "polygon": {"shapeOptions": {"color": "#ffffff", "weight": 2}}}).add_to(fmap)
-    out = st_folium(fmap, height=360, use_container_width=True, key="map", returned_objects=["all_drawings"])
-    drawings = (out or {}).get("all_drawings") or []
-    ring = drawings[-1]["geometry"]["coordinates"][0][:-1] if drawings else []  # (lon, lat); last repeats the first
-    pts = [(round(lat, 5), round(lon, 5)) for lon, lat in ring]
-    st.session_state["points"] = pts
-    st.session_state.pop("bbox", None)
-    if len(pts) != 4:
-        st.caption("Pick the polygon tool on the map and click the 4 corners of your field."
-                   + (f" This shape has {len(pts)} corners; draw exactly 4." if pts else ""))
-        return
-    st.caption(" · ".join(f"{i}: {la:.5f}, {lo:.5f}" for i, (la, lo) in enumerate(pts, 1)))
-    lats, lons = [p[0] for p in pts], [p[1] for p in pts]
-    st.session_state["bbox"] = (min(lons), min(lats), max(lons), max(lats))  # kept for later, not shown
-
-
-field_map()
+st.subheader(f"The field of {farmer['name']}, {farmer['area']}")
+lon0, lat0, lon1, lat1 = farmer["bbox"]
+fmap = folium.Map(tiles=SATELLITE, attr="Esri World Imagery", scrollWheelZoom=False)  # page scroll must not zoom
+folium.Rectangle([[lat0, lon0], [lat1, lon1]], color="#ffffff", weight=3, fill=True, fill_color="#eda100",
+                 fill_opacity=0.25).add_to(fmap)
+fmap.fit_bounds([[lat0, lon0], [lat1, lon1]])
+st_folium(fmap, height=360, use_container_width=True, key=f"map_{farmer['id']}", returned_objects=[])
 
 cols = st.columns(3)
 settings = {}
 for col, (key, label, opts) in zip(cols, [("soil", "Soil texture", sample.SOILS), ("slope", "Slope", sample.SLOPES),
                                           ("access", "Water access", sample.ACCESS)]):
-    settings[key] = col.segmented_control(label, list(opts), default=sample.DEFAULTS[key], key=key,
-                                          format_func=lambda k, o=opts: o[k]["label"]) or sample.DEFAULTS[key]
+    default = farmer["defaults"][key]
+    settings[key] = col.segmented_control(label, list(opts), default=default, key=f"{key}_{farmer['id']}",
+                                          format_func=lambda k, o=opts: o[k]["label"]) or default
 
 # ---------------- Best crops for this region ----------------
-st.subheader("Best crops for this region")
-ranking = crop_ranking()
-crop_rows = pd.DataFrame([{"#": c["rank"], "Crop": c["name"], "Category": c["category"], "Suitability": c["score_pct"],
-                           "Note": c["note"]} for c in ranking["crops"]])
-if not ranking["terrain_adjusted"]:
-    crop_rows = crop_rows.drop(columns="Note")  # every note is the same, so the column says nothing
-score_col = {"Suitability": st.column_config.ProgressColumn("Suitability", format="%.1f%%", min_value=0,
-                                                            max_value=float(crop_rows["Suitability"].max()))}
-st.dataframe(crop_rows.head(TOP_CROPS), hide_index=True, width="stretch", column_config=score_col)
-st.caption("Fixed region ({}, {}, {}, {}): it does not change with the field you draw yet. Bars are relative to the "
-           "best crop. Source: {}.".format(*ranking["bbox"], ranking["source"]))
-with st.expander(f"All {len(crop_rows)} crops"):
-    st.dataframe(crop_rows, hide_index=True, width="stretch", column_config=score_col)
+st.subheader("Best crops for this area")
+ranking = crop_ranking(farmer["id"])
+crop_rows = pd.DataFrame([{"#": c["rank"], "Crop": c["name"], "Final score": c["score_pct"], "Notes": c["note"]}
+                          for c in ranking["crops"][:TOP_CROPS]])
+st.dataframe(crop_rows, hide_index=True, width="stretch", column_config={
+    "#": st.column_config.NumberColumn(width="small"),
+    "Final score": st.column_config.ProgressColumn(format="%.1f%%", min_value=0, width="medium",
+                                                   max_value=float(crop_rows["Final score"].max())),
+    "Notes": st.column_config.TextColumn(width="large")})
+st.caption(f"Bars are relative to the best crop. Source: {ranking['source']}.")
 
 climate_box = st.container()
 
@@ -194,7 +183,7 @@ s1, s2 = st.columns(2)
 rain_pct = s1.slider("What if rainfall changes (%)", -40, 20, 0, step=5)
 temp_delta = s2.slider("What if it gets warmer (°C)", 0.0, 4.0, 0.0, step=0.5)
 
-result = analyze(settings["soil"], settings["slope"], settings["access"], weights, rain_pct, temp_delta)
+result = analyze(farmer["id"], settings["soil"], settings["slope"], settings["access"], weights, rain_pct, temp_delta)
 clim, options = result["climate"], result["options"]
 current = next(o for o in options if o["current"])
 
@@ -268,7 +257,8 @@ st.caption("Water gap: crop demand that rain and stored soil water do not cover.
 st.subheader("How it works")
 with st.expander("What is real and what is sample"):
     st.markdown(
-        "- **Sample:** climate, crops and rotations are hand-entered values, not a dataset. The map points are not used yet.\n"
+        "- **Sample:** the farmers, their climate and the rotations are hand-entered values, not a dataset.\n"
+        "- **From data:** the best-crops table is read from the file of each area.\n"
         "- **Computed:** monthly water balance, soil cover, nitrogen, pest break and weather fit, weighted by your priorities.\n"
         "- **Not validated:** nothing here was checked against field records or by an agronomist.")
 with st.expander("Terms"):

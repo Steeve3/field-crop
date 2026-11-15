@@ -1,0 +1,43 @@
+posizione,crop_code,crop_name,category,raster_path,raster_available,adattabilita_pct,punteggio_finale,note_agronomiche
+1,PST,Pasture grasses,Fodder crops,gs://fao-gismgr-gaez-v5-data/DATA/GAEZ-V5/MAPSET/RES05-SXX/GAEZ-V5.RES05-SXX.HP0120.AGERA5.HIST.PST.HRLM.tif,True,64.4,68.9,Favorita per protezione del suolo
+2,BRL,Barley,Cereals,gs://fao-gismgr-gaez-v5-data/DATA/GAEZ-V5/MAPSET/RES05-SXX/GAEZ-V5.RES05-SXX.HP0120.AGERA5.HIST.BRL.HRLM.tif,True,53.4,61.4,Favorita per protezione del suolo; favorita per resistenza alla siccità
+3,OAT,Oat,Cereals,gs://fao-gismgr-gaez-v5-data/DATA/GAEZ-V5/MAPSET/RES05-SXX/GAEZ-V5.RES05-SXX.HP0120.AGERA5.HIST.OAT.HRLM.tif,True,53.4,57.9,Favorita per protezione del suolo
+4,WHE,Wheat,Cereals,gs://fao-gismgr-gaez-v5-data/DATA/GAEZ-V5/MAPSET/RES05-SXX/GAEZ-V5.RES05-SXX.HP0120.AGERA5.HIST.WHE.HRLM.tif,True,53.4,57.9,Favorita per protezione del suolo
+5,RYE,Rye,Cereals,gs://fao-gismgr-gaez-v5-data/DATA/GAEZ-V5/MAPSET/RES05-SXX/GAEZ-V5.RES05-SXX.HP0120.AGERA5.HIST.RYE.HRLM.tif,True,52.7,57.2,Favorita per protezione del suolo
+6,TRI,Triticale,Cereals,gs://fao-gismgr-gaez-v5-data/DATA/GAEZ-V5/MAPSET/RES05-SXX/GAEZ-V5.RES05-SXX.HP0120.AGERA5.HIST.TRI.HRLM.tif,True,50.5,55.0,Favorita per protezione del suolo
+7,BCK,Buckwheat,Cereals,gs://fao-gismgr-gaez-v5-data/DATA/GAEZ-V5/MAPSET/RES05-SXX/GAEZ-V5.RES05-SXX.HP0120.AGERA5.HIST.BCK.HRLM.tif,True,53.9,53.9,Adattabilità climatica standard
+8,CAM,Camelina,Oil crops,gs://fao-gismgr-gaez-v5-data/DATA/GAEZ-V5/MAPSET/RES05-SXX/GAEZ-V5.RES05-SXX.HP0120.AGERA5.HIST.CAM.HRLM.tif,True,50.2,50.2,Adattabilità climatica standard
+9,FLX,Flax fibre,Industrial crops,gs://fao-gismgr-gaez-v5-data/DATA/GAEZ-V5/MAPSET/RES05-SXX/GAEZ-V5.RES05-SXX.HP0120.AGERA5.HIST.FLX.HRLM.tif,True,46.8,46.8,Adattabilità climatica standard
+10,RSD,Rapeseed,Oil crops,gs://fao-gismgr-gaez-v5-data/DATA/GAEZ-V5/MAPSET/RES05-SXX/GAEZ-V5.RES05-SXX.HP0120.AGERA5.HIST.RSD.HRLM.tif,True,44.6,44.6,Adattabilità climatica standard
+11,ALF,Alfalfa,Fodder crops,gs://fao-gismgr-gaez-v5-data/DATA/GAEZ-V5/MAPSET/RES05-SXX/GAEZ-V5.RES05-SXX.HP0120.AGERA5.HIST.ALF.HRLM.tif,True,37.8,42.3,Favorita per protezione del suolo
+12,SWG,Switchgrass,Bioenergy feedstocks,gs://fao-gismgr-gaez-v5-data/DATA/GAEZ-V5/MAPSET/RES05-SXX/GAEZ-V5.RES05-SXX.HP0120.AGERA5.HIST.SWG.HRLM.tif,True,41.5,41.5,Adattabilità climatica standard
+13,CRT,Carinata,Oil crops,gs://fao-gismgr-gaez-v5-data/DATA/GAEZ-V5/MAPSET/RES05-SXX/GAEZ-V5.RES05-SXX.HP0120.AGERA5.HIST.CRT.HRLM.tif,True,41.3,41.3,Adattabilità climatica standard
+14,PEA,Dry pea,Pulses ,gs://fao-gismgr-gaez-v5-data/DATA/GAEZ-V5/MAPSET/RES05-SXX/GAEZ-V5.RES05-SXX.HP0120.AGERA5.HIST.PEA.HRLM.tif,True,41.3,41.3,Adattabilità climatica standard
+15,CHK,Chickpea,Pulses ,gs://fao-gismgr-gaez-v5-data/DATA/GAEZ-V5/MAPSET/RES05-SXX/GAEZ-V5.RES05-SXX.HP0120.AGERA5.HIST.CHK.HRLM.tif,True,37.7,41.2,Favorita per resistenza alla siccità
+16,MIS,Miscanthus,Bioenergy feedstocks,gs://fao-gismgr-gaez-v5-data/DATA/GAEZ-V5/MAPSET/RES05-SXX/GAEZ-V5.RES05-SXX.HP0120.AGERA5.HIST.MIS.HRLM.tif,True,40.2,40.2,Adattabilità climatica standard
+17,RCG,Reed canary grass,Bioenergy feedstocks,gs://fao-gismgr-gaez-v5-data/DATA/GAEZ-V5/MAPSET/RES05-SXX/GAEZ-V5.RES05-SXX.HP0120.AGERA5.HIST.RCG.HRLM.tif,True,37.9,37.9,Adattabilità climatica standard
+18,BSG,Biomass sorghum,Cereals,gs://fao-gismgr-gaez-v5-data/DATA/GAEZ-V5/MAPSET/RES05-SXX/GAEZ-V5.RES05-SXX.HP0120.AGERA5.HIST.BSG.HRLM.tif,True,33.7,33.7,Adattabilità climatica standard
+19,OLV,Olive,Oil crops,gs://fao-gismgr-gaez-v5-data/DATA/GAEZ-V5/MAPSET/RES05-SXX/GAEZ-V5.RES05-SXX.HP0120.AGERA5.HIST.OLV.HRLM.tif,True,27.6,31.1,Favorita per resistenza alla siccità
+20,PHB,Phaseolus bean,Pulses ,gs://fao-gismgr-gaez-v5-data/DATA/GAEZ-V5/MAPSET/RES05-SXX/GAEZ-V5.RES05-SXX.HP0120.AGERA5.HIST.PHB.HRLM.tif,True,26.6,26.6,Adattabilità climatica standard
+21,SRG,Sorghum,Cereals,gs://fao-gismgr-gaez-v5-data/DATA/GAEZ-V5/MAPSET/RES05-SXX/GAEZ-V5.RES05-SXX.HP0120.AGERA5.HIST.SRG.HRLM.tif,True,22.7,26.2,Favorita per resistenza alla siccità
+22,CAR,Carrot,Vegetables ,gs://fao-gismgr-gaez-v5-data/DATA/GAEZ-V5/MAPSET/RES05-SXX/GAEZ-V5.RES05-SXX.HP0120.AGERA5.HIST.CAR.HRLM.tif,True,26.1,26.1,Adattabilità climatica standard
+23,ONI,Onion,Vegetables ,gs://fao-gismgr-gaez-v5-data/DATA/GAEZ-V5/MAPSET/RES05-SXX/GAEZ-V5.RES05-SXX.HP0120.AGERA5.HIST.ONI.HRLM.tif,True,24.7,24.7,Adattabilità climatica standard
+24,CAB,Cabbage,Vegetables ,gs://fao-gismgr-gaez-v5-data/DATA/GAEZ-V5/MAPSET/RES05-SXX/GAEZ-V5.RES05-SXX.HP0120.AGERA5.HIST.CAB.HRLM.tif,True,23.0,23.0,Adattabilità climatica standard
+25,TOM,Tomato,Vegetables ,gs://fao-gismgr-gaez-v5-data/DATA/GAEZ-V5/MAPSET/RES05-SXX/GAEZ-V5.RES05-SXX.HP0120.AGERA5.HIST.TOM.HRLM.tif,True,21.6,21.6,Adattabilità climatica standard
+26,FIML,Finger millet,Cereals,gs://fao-gismgr-gaez-v5-data/DATA/GAEZ-V5/MAPSET/RES05-SXX/GAEZ-V5.RES05-SXX.HP0120.AGERA5.HIST.FIML.HRLM.tif,True,20.0,20.0,Adattabilità climatica standard
+27,FML,Foxtail millet,Cereals,gs://fao-gismgr-gaez-v5-data/DATA/GAEZ-V5/MAPSET/RES05-SXX/GAEZ-V5.RES05-SXX.HP0120.AGERA5.HIST.FML.HRLM.tif,True,19.2,19.2,Adattabilità climatica standard
+28,TEF,Tef,Cereals,gs://fao-gismgr-gaez-v5-data/DATA/GAEZ-V5/MAPSET/RES05-SXX/GAEZ-V5.RES05-SXX.HP0120.AGERA5.HIST.TEF.HRLM.tif,True,19.1,19.1,Adattabilità climatica standard
+29,MZS,Silage maize,Cereals,gs://fao-gismgr-gaez-v5-data/DATA/GAEZ-V5/MAPSET/RES05-SXX/GAEZ-V5.RES05-SXX.HP0120.AGERA5.HIST.MZS.HRLM.tif,True,36.8,18.5,Penalizzata per rischio erosione su pendio; penalizzata per elevato fabbisogno idrico
+30,GRD,Groundnut,Oil crops,gs://fao-gismgr-gaez-v5-data/DATA/GAEZ-V5/MAPSET/RES05-SXX/GAEZ-V5.RES05-SXX.HP0120.AGERA5.HIST.GRD.HRLM.tif,True,17.5,17.5,Adattabilità climatica standard
+31,SFL,Sunflower,Oil crops,gs://fao-gismgr-gaez-v5-data/DATA/GAEZ-V5/MAPSET/RES05-SXX/GAEZ-V5.RES05-SXX.HP0120.AGERA5.HIST.SFL.HRLM.tif,True,23.9,16.1,Penalizzata per rischio erosione su pendio; favorita per resistenza alla siccità
+32,WMEL,Watermelon,Fruits,gs://fao-gismgr-gaez-v5-data/DATA/GAEZ-V5/MAPSET/RES05-SXX/GAEZ-V5.RES05-SXX.HP0120.AGERA5.HIST.WMEL.HRLM.tif,True,15.0,15.0,Adattabilità climatica standard
+33,CIT,Citrus,Fruits,gs://fao-gismgr-gaez-v5-data/DATA/GAEZ-V5/MAPSET/RES05-SXX/GAEZ-V5.RES05-SXX.HP0120.AGERA5.HIST.CIT.HRLM.tif,True,14.8,14.8,Adattabilità climatica standard
+34,WPO,White potato,Roots and tubers ,gs://fao-gismgr-gaez-v5-data/DATA/GAEZ-V5/MAPSET/RES05-SXX/GAEZ-V5.RES05-SXX.HP0120.AGERA5.HIST.WPO.HRLM.tif,True,22.5,11.2,Penalizzata per rischio erosione su pendio
+35,COT,Cotton,Industrial crops,gs://fao-gismgr-gaez-v5-data/DATA/GAEZ-V5/MAPSET/RES05-SXX/GAEZ-V5.RES05-SXX.HP0120.AGERA5.HIST.COT.HRLM.tif,True,21.9,10.6,Penalizzata per rischio erosione su pendio
+36,SOL,Solaris energy tobacco ,Bioenergy feedstocks,gs://fao-gismgr-gaez-v5-data/DATA/GAEZ-V5/MAPSET/RES05-SXX/GAEZ-V5.RES05-SXX.HP0120.AGERA5.HIST.SOL.HRLM.tif,True,9.0,9.0,Adattabilità climatica standard
+37,MZE,Maize,Cereals,gs://fao-gismgr-gaez-v5-data/DATA/GAEZ-V5/MAPSET/RES05-SXX/GAEZ-V5.RES05-SXX.HP0120.AGERA5.HIST.MZE.HRLM.tif,True,21.9,3.6,Penalizzata per rischio erosione su pendio; penalizzata per elevato fabbisogno idrico
+38,AVOC,Avocado,Fruits,gs://fao-gismgr-gaez-v5-data/DATA/GAEZ-V5/MAPSET/RES05-SXX/GAEZ-V5.RES05-SXX.HP0120.AGERA5.HIST.AVOC.HRLM.tif,True,0.0,0.0,Adattabilità climatica standard
+39,AVOST,Avocado subtropical ecotype,Fruits,gs://fao-gismgr-gaez-v5-data/DATA/GAEZ-V5/MAPSET/RES05-SXX/GAEZ-V5.RES05-SXX.HP0120.AGERA5.HIST.AVOST.HRLM.tif,True,0.0,0.0,Adattabilità climatica standard
+40,SOY,Soybean,Oil crops,gs://fao-gismgr-gaez-v5-data/DATA/GAEZ-V5/MAPSET/RES05-SXX/GAEZ-V5.RES05-SXX.HP0120.AGERA5.HIST.SOY.HRLM.tif,True,14.6,0.0,Penalizzata per rischio erosione su pendio; penalizzata per elevato fabbisogno idrico
+41,SUB,Sugar beet,Sugar crops ,gs://fao-gismgr-gaez-v5-data/DATA/GAEZ-V5/MAPSET/RES05-SXX/GAEZ-V5.RES05-SXX.HP0120.AGERA5.HIST.SUB.HRLM.tif,True,17.3,0.0,Penalizzata per rischio erosione su pendio; penalizzata per elevato fabbisogno idrico
+42,TOB,Tobacco,Narcotics and stimulants ,gs://fao-gismgr-gaez-v5-data/DATA/GAEZ-V5/MAPSET/RES05-SXX/GAEZ-V5.RES05-SXX.HP0120.AGERA5.HIST.TOB.HRLM.tif,True,10.3,0.0,Penalizzata per rischio erosione su pendio
