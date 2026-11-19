@@ -1,28 +1,5 @@
-"""Sanity checks on the monthly model, run on the SAMPLE data."""
+"""Checks on the climate helper and on the static rotation results."""
 from engine import analyze, model, sample
-
-CLIMATE = sample.FARMERS[0]["climate"]
-ARGS = (sample.CROPS, sample.SOILS["loam"], sample.SLOPES["flat"], sample.ACCESS["limited"])
-
-
-def test_more_rain_never_increases_water_gap():
-    for rot in sample.ROTATIONS:
-        dry = model.evaluate(CLIMATE, rot, *ARGS, rain_pct=-30)
-        base = model.evaluate(CLIMATE, rot, *ARGS)
-        wet = model.evaluate(CLIMATE, rot, *ARGS, rain_pct=20)
-        assert dry["water_gap_mm"] >= base["water_gap_mm"] >= wet["water_gap_mm"], rot["id"]
-
-
-def test_scores_stay_in_range():
-    for rot in sample.ROTATIONS:
-        r = model.evaluate(CLIMATE, rot, *ARGS, rain_pct=-40, d_temp=4)
-        assert all(0 <= v <= 100 for v in r["scores"].values()), rot["id"]
-
-
-def test_cover_crop_leaves_fewer_bare_months():
-    by_id = {r["id"]: model.evaluate(CLIMATE, r, *ARGS) for r in sample.ROTATIONS}
-    assert by_id["r2"]["bare_months"] < by_id["r1"]["bare_months"] < by_id["r0"]["bare_months"]
-    assert by_id["r0"]["bare_months"] == 6  # maize occupies April-September
 
 
 def test_et0_is_plausible_for_every_farmer():
@@ -31,9 +8,23 @@ def test_et0_is_plausible_for_every_farmer():
         assert 700 < sum(et0) < 1200 and et0[6] == max(et0), f["id"]  # peak in July
 
 
-def test_analyze_ranks_all_options():
-    res = analyze(sample.FARMERS[0]["id"])
-    scores = [o["score"] for o in res["options"]]
-    assert scores == sorted(scores, reverse=True) and len(scores) == len(sample.ROTATIONS)
-    assert sum(o["current"] for o in res["options"]) == 1
-    assert res["data_status"] == "sample"
+def test_options_are_complete():
+    for f in sample.FARMERS:
+        options = analyze(f["id"])["options"]
+        assert [o["id"] for o in options] == ["balanced", "water_saving", "economic_return", "soil_health", "current"]
+        assert all(len(o["years"]) == 5 for o in options) and options[4]["current"]
+        assert [y["name"] for y in options[4]["years"]] == ["Silage maize"] * 3 + ["Wheat"] * 2
+        assert all(0 <= o[k] <= 1 for o in options for k in ("water", "revenue", "soil"))
+
+
+def test_each_preference_selects_its_strategy():
+    expected = {"balanced": "balanced", "water": "water_saving", "revenue": "economic_return", "soil": "soil_health"}
+    for preference, strategy in expected.items():
+        assert analyze("mugello", preference)["selected"] == strategy
+
+
+def test_val_di_chiana_has_its_own_results():
+    own = {o["id"]: o for o in analyze("val_di_chiana")["options"]}
+    other = {o["id"]: o for o in analyze("asciano")["options"]}
+    assert own["balanced"]["years"][0]["name"] == "Phaseolus bean" and own["current"]["water"] == 0.7628
+    assert own["balanced"]["water"] != other["balanced"]["water"]

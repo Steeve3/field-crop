@@ -1,7 +1,7 @@
 """The shared data shape between engine/ and app.py. Agree with your teammate before changing it."""
 from __future__ import annotations
 
-from typing import Literal, TypedDict
+from typing import Literal, NotRequired, TypedDict
 
 
 class Climate(TypedDict):
@@ -18,42 +18,30 @@ class Climate(TypedDict):
     heat: list[bool]
 
 
-class Flag(TypedDict):
-    type: Literal["frost", "heat"]
-    crop: str
-    months: list[int]       # 0 = January
+class Year(TypedDict):
+    name: str
+    role: str               # cereal | legume | cover | other (card colour)
 
 
 class Option(TypedDict):
     id: str
     name: str
     current: bool           # True for the farmer's existing rotation
-    years: int
-    why: str
-    benefits: list[str]
-    gaps: list[str]         # information gaps
-    risks: list[str]        # needs local review
-    cal: list[dict | None]  # one cell per month: None = bare, else {id, crop, j, len, seg}
-    score: float            # 0-100 with the farmer's weights
-    lo: float               # score in a dry / wet year
-    hi: float
-    scores: dict[str, float]  # water, soil, fert, pest, income, forage, climate
-    water_gap_mm: float
-    gap_dry_mm: float
-    bare_months: float
-    bare_by_month: list[float]
-    exposed_frac: float
-    syn_n_kg: float
-    residue_t: float
-    heat_frost_months: float
-    flags: list[Flag]
+    years: list[Year] | None  # 5-year sequence; None when not provided
+    water: float            # 0-1, higher is better: 1 - the model's water pressure
+    revenue: float          # higher is better
+    soil: float             # higher is better
+    model_score: float      # the model's own score under its weighting
+    percentile: NotRequired[float]       # current rotation only
+    violations: NotRequired[list[str]]   # current rotation only: rules it breaks
 
 
 class AnalysisResult(TypedDict):
     data_status: Literal["sample", "live", "cached"]
     source: str
     climate: Climate
-    options: list[Option]   # best first
+    options: list[Option]   # the four strategies, then the current rotation
+    selected: str           # id of the strategy matching the farmer's preference
 
 
 class CropScore(TypedDict):

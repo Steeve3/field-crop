@@ -7,8 +7,10 @@ FieldShift Advisor: a Streamlit app for NASA Space Apps 2026, challenge
 One page, layout after the Orbit Almanac prototype. It opens with three farmer buttons
 (`sample.FARMERS`: name, area, bbox, crop file, sample climate). After a click the page shows
 that farmer's field on the map, the best crops for the area (from the farmer's file in `data/`),
-the climate record, priorities and what-if sliders, and the current rotation against alternatives.
-Climate and rotations are SAMPLE data in `engine/sample.py`.
+the climate record, a preference (balanced, water, revenue, soil), and the current rotation next to the matching one of four
+optimised strategies (balanced, water saving, economic return, soil health).
+Rotation results are STATIC (`engine/results.py`, copied from the optimisation notebook output);
+farmers, climate and field settings are SAMPLE (`engine/sample.py`). Definitions: `data/readme.pdf`.
 
 ## Ownership (do not edit the other person's files)
 | Area | Owner | Files |
