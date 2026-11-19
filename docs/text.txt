@@ -1,0 +1,1 @@
+Caicheremo i file come pdf, immagini, screenshot che citeremo nel readme.md
